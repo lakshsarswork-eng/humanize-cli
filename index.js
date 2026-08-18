@@ -121,7 +121,7 @@ function printBanner() {
     `\n${c.bold}${c.cyan}╔══════════════════════════════════════╗${c.reset}`
   );
   console.log(
-    `${c.bold}${c.cyan}║      ✍  BLOG HUMANIZER  v1.0         ║${c.reset}`
+    `${c.bold}${c.cyan}║         ✍  UNBOT  v1.0               ║${c.reset}`
   );
   console.log(
     `${c.bold}${c.cyan}╚══════════════════════════════════════╝${c.reset}\n`

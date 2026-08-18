@@ -1,15 +1,16 @@
 {
-  "name": "humanize-cli",
+  "name": "unbot",
   "version": "1.0.0",
-  "description": "Rewrite AI-generated blog content to sound human — for CoinAndStocks and beyond",
+  "description": "Un-bot your AI-generated blog content — rewrite it to sound human before Google catches it",
   "type": "module",
   "bin": {
-    "humanize": "./index.js"
+    "unbot": "./index.js"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.55.0"
+    "@anthropic-ai/sdk": "^0.55.0",
+    "express": "^5.2.1"
   }
 }

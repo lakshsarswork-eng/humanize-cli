@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unbot — AI Blog Rewriter</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --accent: #7c6af7;
+      --accent2: #56cfb2;
+      --red: #f87171;
+      --green: #4ade80;
+      --yellow: #facc15;
+      --text: #e2e4ed;
+      --muted: #6b7280;
+      --card: #20232f;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header span.badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .tagline {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 0;
+    }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 24px;
+      padding: 14px 32px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+    }
+
+    .stat { display: flex; align-items: center; gap: 6px; }
+    .stat-label { color: var(--muted); }
+    .stat-value { font-weight: 600; }
+    .stat-value.red { color: var(--red); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.yellow { color: var(--yellow); }
+
+    /* ── Panels ── */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+
+    .panel:last-child { border-right: none; }
+
+    .panel-header {
+      padding: 14px 24px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+    }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 24px;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      font-family: inherit;
+      min-height: 400px;
+    }
+
+    textarea::placeholder { color: var(--muted); }
+
+    .output-area {
+      flex: 1;
+      padding: 24px;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      overflow-y: auto;
+      min-height: 400px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .output-area.empty { color: var(--muted); font-style: italic; }
+
+    /* ── Phrase chips ── */
+    .phrases-bar {
+      grid-column: 1 / -1;
+      padding: 12px 32px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-height: 48px;
+      font-size: 0.78rem;
+    }
+
+    .phrases-label { color: var(--muted); font-weight: 600; white-space: nowrap; }
+
+    .chip {
+      background: rgba(248, 113, 113, 0.12);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: var(--red);
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+    .chip.clean {
+      background: rgba(74, 222, 128, 0.1);
+      border-color: rgba(74, 222, 128, 0.3);
+      color: var(--green);
+    }
+
+    /* ── Action bar ── */
+    .action-bar {
+      grid-column: 1 / -1;
+      padding: 16px 32px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: #6a59e0; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+
+    .btn-copy {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      margin-left: auto;
+    }
+    .btn-copy:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    .status-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* ── Cursor blink ── */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--accent);
+      margin-left: 1px;
+      vertical-align: text-bottom;
+      animation: blink 0.9s steps(1) infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="font-size:1.4rem">✍</div>
+  <h1>Unbot</h1>
+  <span class="badge">AI → Human</span>
+  <span class="tagline">Un-bot your content before Google catches it</span>
+</header>
+
+<main>
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-label">Input words</span>
+      <span class="stat-value" id="stat-in">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Output words</span>
+      <span class="stat-value" id="stat-out">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">AI phrases in</span>
+      <span class="stat-value red" id="stat-phrases-in">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">AI phrases out</span>
+      <span class="stat-value green" id="stat-phrases-out">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Status</span>
+      <span class="stat-value" id="stat-status" style="color:var(--muted)">Idle</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span>Input — AI Text</span>
+      <span id="in-wc" style="font-weight:400">0 words</span>
+    </div>
+    <textarea id="input" placeholder="Paste your AI-generated blog post here...&#10;&#10;Try something with: Furthermore, Delve into, In today's fast-paced world, Comprehensive guide..."></textarea>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span>Output — Humanized</span>
+      <span id="out-wc" style="font-weight:400">0 words</span>
+    </div>
+    <div class="output-area empty" id="output">Output will stream here in real-time...</div>
+  </div>
+
+  <div class="phrases-bar" id="phrases-bar">
+    <span class="phrases-label">AI Phrases:</span>
+    <span style="color:var(--muted);font-size:0.78rem">Paste text to detect...</span>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn-primary" id="btn-run" onclick="run()">
+      ✦ Humanize
+    </button>
+    <button class="btn-ghost" onclick="clearAll()">Clear</button>
+    <span class="status-text" id="status-text"></span>
+    <button class="btn-copy" id="btn-copy" onclick="copyOutput()" style="display:none">
+      Copy Output
+    </button>
+  </div>
+</main>
+
+<script>
+  const inputEl = document.getElementById('input');
+  const outputEl = document.getElementById('output');
+  const btnRun = document.getElementById('btn-run');
+  const statusText = document.getElementById('status-text');
+  const phrasesBar = document.getElementById('phrases-bar');
+  const btnCopy = document.getElementById('btn-copy');
+
+  let detectTimer = null;
+
+  function wc(text) {
+    return text.trim() ? text.trim().split(/\s+/).length : 0;
+  }
+
+  function setStats(key, value, color) {
+    const el = document.getElementById('stat-' + key);
+    el.textContent = value;
+    if (color) el.style.color = `var(--${color})`;
+  }
+
+  // Live word count + phrase detect on input
+  inputEl.addEventListener('input', () => {
+    const w = wc(inputEl.value);
+    document.getElementById('in-wc').textContent = `${w} words`;
+    setStats('in', w);
+
+    clearTimeout(detectTimer);
+    if (inputEl.value.trim()) {
+      detectTimer = setTimeout(detectPhrases, 400);
+    } else {
+      renderPhrases([]);
+    }
+  });
+
+  async function detectPhrases() {
+    const res = await fetch('/api/detect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: inputEl.value }),
+    });
+    const { phrases } = await res.json();
+    renderPhrases(phrases);
+    setStats('phrases-in', phrases.length, phrases.length > 0 ? 'red' : 'green');
+  }
+
+  function renderPhrases(phrases) {
+    phrasesBar.innerHTML = '<span class="phrases-label">AI Phrases:</span>';
+    if (phrases.length === 0) {
+      phrasesBar.innerHTML += '<span class="chip clean">✓ None detected</span>';
+    } else {
+      phrases.forEach(p => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = p;
+        phrasesBar.appendChild(chip);
+      });
+    }
+  }
+
+  async function run() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    btnRun.disabled = true;
+    btnRun.innerHTML = '<span class="spinner"></span> Rewriting...';
+    btnCopy.style.display = 'none';
+    outputEl.className = 'output-area';
+    outputEl.textContent = '';
+    statusText.textContent = 'Connecting to Claude...';
+    setStats('status', 'Running...', 'yellow');
+
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    outputEl.appendChild(cursor);
+
+    const res = await fetch('/api/humanize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      outputEl.textContent = '⚠ Error: ' + err.error;
+      btnRun.disabled = false;
+      btnRun.innerHTML = '✦ Humanize';
+      setStats('status', 'Error', 'red');
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let outputText = '';
+
+    statusText.textContent = 'Streaming...';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      let event = null;
+      let data = null;
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) event = line.slice(7).trim();
+        else if (line.startsWith('data: ')) {
+          try { data = JSON.parse(line.slice(6)); } catch {}
+        } else if (line === '') {
+          if (event === 'phrases' && data) {
+            setStats('phrases-in', data.phrases.length, data.phrases.length > 0 ? 'red' : 'green');
+            setStats('in', data.wordCount);
+            renderPhrases(data.phrases);
+          } else if (event === 'token' && data) {
+            outputText += data.text;
+            outputEl.textContent = outputText;
+            outputEl.appendChild(cursor);
+            const wCount = wc(outputText);
+            document.getElementById('out-wc').textContent = `${wCount} words`;
+            setStats('out', wCount);
+            outputEl.scrollTop = outputEl.scrollHeight;
+          } else if (event === 'done' && data) {
+            cursor.remove();
+            setStats('out', data.outputWordCount);
+            const rem = data.remainingPhrases.length;
+            setStats('phrases-out', rem === 0 ? '✓ 0' : rem, rem === 0 ? 'green' : 'yellow');
+            setStats('status', rem === 0 ? '✓ Clean' : '⚠ Check output', rem === 0 ? 'green' : 'yellow');
+            statusText.textContent = rem === 0 ? '✓ No AI phrases in output' : `⚠ ${rem} phrase(s) remaining`;
+            btnCopy.style.display = 'block';
+          } else if (event === 'error' && data) {
+            cursor.remove();
+            outputEl.textContent += '\n\n⚠ Error: ' + data.message;
+            setStats('status', 'Error', 'red');
+          }
+          event = null; data = null;
+        }
+      }
+    }
+
+    btnRun.disabled = false;
+    btnRun.innerHTML = '✦ Humanize';
+  }
+
+  function clearAll() {
+    inputEl.value = '';
+    outputEl.textContent = 'Output will stream here in real-time...';
+    outputEl.className = 'output-area empty';
+    document.getElementById('in-wc').textContent = '0 words';
+    document.getElementById('out-wc').textContent = '0 words';
+    setStats('in', '—'); setStats('out', '—');
+    setStats('phrases-in', '—'); setStats('phrases-out', '—');
+    setStats('status', 'Idle'); document.getElementById('stat-status').style.color = 'var(--muted)';
+    statusText.textContent = '';
+    btnCopy.style.display = 'none';
+    renderPhrases([]);
+  }
+
+  function copyOutput() {
+    navigator.clipboard.writeText(outputEl.textContent).then(() => {
+      btnCopy.textContent = 'Copied!';
+      setTimeout(() => btnCopy.textContent = 'Copy Output', 1500);
+    });
+  }
+</script>
+</body>
+</html>
