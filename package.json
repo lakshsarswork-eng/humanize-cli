@@ -1,0 +1,15 @@
+{
+  "name": "humanize-cli",
+  "version": "1.0.0",
+  "description": "Rewrite AI-generated blog content to sound human — for CoinAndStocks and beyond",
+  "type": "module",
+  "bin": {
+    "humanize": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.55.0"
+  }
+}
